@@ -1,0 +1,137 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="it.italiancoders.mybudget.dao.Account">
+
+    <resultMap id="accountMap" type="it.italiancoders.mybudget.model.api.Account">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="numberOfUsers" column="numberOfUsers"/>
+        <result property="defaultUsername" column="defaultUsername"/>
+        <result property="description" column="description"/>
+        <result property="status" column="status" javaType="it.italiancoders.mybudget.model.api.AccountStatusEnum" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+
+    </resultMap>
+
+    <resultMap id="memberMap" type="it.italiancoders.mybudget.model.api.User">
+        <result property="username" column="username"/>
+        <result property="alias" column="alias"/>
+        <result property="profileImageUrl" column="profileImageUrl"/>
+    </resultMap>
+
+    <resultMap id="accountRelationMap" type="map">
+        <result property="username" column="username"/>
+        <result property="idAccount" column="idAccount"/>
+        <result property="isAdmin" column="isAdmin"/>
+
+    </resultMap>
+
+    <select id="findAccountMembers" resultMap="memberMap">
+        SELECT
+            USERS.USERNAME as username,
+            USERS.ALIAS as alias,
+            USERS.PROFILE_IMG_URL as profileImageUrl
+        FROM
+            PUBLIC.ACCOUNTS
+            INNER JOIN PUBLIC.USER_ACCOUNT ON (USER_ACCOUNT.ID_ACCOUNT = ACCOUNTS.ID)
+            INNER JOIN PUBLIC.USERS ON (USER_ACCOUNT.ID_USER = USERS.USERNAME)
+        <where>
+            ACCOUNTS.id= #{accountId}
+        </where>
+
+    </select>
+
+    <select id="findAccounts" resultMap="accountMap">
+         SELECT
+            ID AS id,
+            NAME AS name,
+            DESCRIPTION AS description,
+            DEFAULT_USER AS defaultUsername,
+            STATUS AS status,
+           ( select count(*)
+               from USER_ACCOUNT
+               where ID_ACCOUNT = ACCOUNTS.id ) as numberOfUsers
+          FROM
+            PUBLIC.ACCOUNTS
+            INNER JOIN PUBLIC.USER_ACCOUNT ON (USER_ACCOUNT.ID_ACCOUNT = ACCOUNTS.ID)
+        <where>
+            1 = 1
+            <if test="username != null">
+                AND LOWER (USER_ACCOUNT.ID_USER)= LOWER(#{username})
+            </if>
+
+            <if test="name != null">
+                AND LOWER (ACCOUNTS.NAME)= LOWER(#{name})
+            </if>
+
+            <if test="id != null">
+                AND ACCOUNTS.id= #{id}
+            </if>
+
+        </where>
+        GROUP BY ID,NAME,DESCRIPTION,STATUS
+        ORDER BY ACCOUNTS.STATUS DESC, ACCOUNTS.UPDATEDAT DESC
+    </select>
+
+    <update id="updateAccount" >
+        UPDATE  PUBLIC.ACCOUNTS
+           SET  NAME =#{name},
+                DESCRIPTION = #{description},
+                DEFAULT_USER  = #{defaultUsername},
+                STATUS =  #{status}
+        WHERE   ID=  #{id}
+    </update>
+
+    <insert id="insertAccount" >
+        INSERT INTO  PUBLIC.ACCOUNTS
+          (ID,NAME,DESCRIPTION,STATUS, DEFAULT_USER)
+        VALUES
+          (#{id}, #{name},#{description},#{status}, #{defaultUsername} )
+    </insert>
+
+    <update id="changeGrantUserAccount">
+        UPDATE  PUBLIC.USER_ACCOUNT
+          SET IS_ADMIN = #{isAdmin}
+        WHERE ID_USER = #{username} AND ID_ACCOUNT =  #{idAccount}
+    </update>
+
+    <insert id="deleteUserAccount" >
+        DELETE  FROM PUBLIC.USER_ACCOUNT
+        WHERE id_user = #{username} AND id_account =  #{idAccount}
+    </insert>
+
+    <delete id="deleteAccount">
+        DELETE FROM  PUBLIC.ACCOUNTS
+        WHERE id = #{id}
+    </delete>
+
+    <select id="getAccountRelations" resultMap="accountRelationMap">
+        SELECT
+            ID_USER as username,
+            ID_ACCOUNT as idAccount,
+            IS_ADMIN as isAdmin
+        FROM
+            PUBLIC.USER_ACCOUNT
+        <where>
+        1 = 1
+        <if test="username != null">
+            AND id_user = #{username}
+        </if>
+        <if test="idAccount != null">
+            AND id_account = #{idAccount}
+        </if>
+         <if test="isAdmin != null">
+            AND is_admin = #{isAdmin}
+         </if>
+        </where>
+           ORDER by createdat
+    </select>
+
+    <insert id="insertUserAccount" >
+        INSERT INTO  PUBLIC.USER_ACCOUNT
+            (ID_USER,ID_ACCOUNT,IS_ADMIN)
+          VALUES
+            ( #{username},#{idAccount},#{isAdmin})
+    </insert>
+
+</mapper>

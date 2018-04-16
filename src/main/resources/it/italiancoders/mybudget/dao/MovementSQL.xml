@@ -1,0 +1,244 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="it.italiancoders.mybudget.dao.Movement">
+
+
+    <resultMap id="movementMap" type="it.italiancoders.mybudget.model.api.Movement">
+        <result property="id" column="id"/>
+        <result property="type" column="type" javaType="it.italiancoders.mybudget.model.api.MovementType" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="amount" column="amount"/>
+        <result property="executedAt" column="executedAt"/>
+        <result property="uptadedAt" column="uptadedAt"/>
+        <result property="executedBy.username" column="username"/>
+        <result property="executedBy.email" column="email"/>
+        <result property="executedBy.firstname" column="firstname"/>
+        <result property="executedBy.lastname" column="lastname"/>
+        <result property="executedBy.alias" column="alias"/>
+        <result property="executedBy.socialType" column="socialType" javaType="it.italiancoders.mybudget.model.api.SocialTypeEnum" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="executedBy.gender" column="gender" javaType="it.italiancoders.mybudget.model.api.GenderEnum" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="account.id" column="accountId"/>
+        <result property="account.name" column="accountName"/>
+        <result property="account.defaultUsername" column="accountDefaultUsername"/>
+        <result property="account.description" column="accountDescription"/>
+        <result property="account.status" column="accountStatus" javaType="it.italiancoders.mybudget.model.api.AccountStatusEnum" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="category.id" column="categoryId"/>
+        <result property="category.value" column="categoryValue"/>
+        <result property="category.type" column="categoryType" javaType="it.italiancoders.mybudget.model.api.MovementType" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="category.isEditable" column="categoryIsEditable"/>
+        <result property="category.iconId" column="categoryIconId"/>
+    </resultMap>
+
+    <resultMap id="movementSummaryMap" type="it.italiancoders.mybudget.model.api.mybatis.MovementSummaryResultType">
+        <result property="categoryId" column="categoryId"/>
+        <result property="type" column="type" javaType="it.italiancoders.mybudget.model.api.MovementType" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="total" column="total"/>
+
+    </resultMap>
+
+    <resultMap id="autoMovementMap" type="it.italiancoders.mybudget.model.api.AutoMovementSettings">
+        <result property="id" column="id"/>
+        <result property="movementDate" column="movementDate"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="start" column="fromDate"/>
+        <result property="end" column="toDate"/>
+        <result property="frequency" column="frequency" javaType="it.italiancoders.mybudget.model.api.ScheduledFrequencyEnum" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="account.id" column="account"/>
+        <result property="amount" column="amount"/>
+        <result property="category.id" column="category"/>
+        <result property="type" column="movementType" javaType="it.italiancoders.mybudget.model.api.MovementType" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="user.username" column="username"/>
+
+    </resultMap>
+
+    <sql id="movementsFilter">
+        <where>
+            1 = 1
+            <if test="accountId != null">
+                AND ACCOUNTID= #{accountId}
+            </if>
+
+            <if test="day != null">
+                AND exec_day= #{day}
+            </if>
+            <if test="month != null">
+                AND exec_month= #{month}
+            </if>
+
+            <if test="year != null">
+                AND exec_year= #{year}
+            </if>
+
+            <if test="movementId != null">
+                AND id= #{movementId}
+            </if>
+
+            <if test="user != null">
+                AND EXECUTEDBY= #{user}
+            </if>
+
+            <if test="categoryId != null">
+                AND CATEGORYID= #{categoryId}
+            </if>
+        </where>
+    </sql>
+
+    <select id="findMovements" resultMap="movementMap">
+        SELECT
+            mov.ID as id,
+            mov.TYPE as type,
+            mov.AMOUNT as amount,
+            mov.EXECUTEDBY as executedBy,
+            mov.EXECUTEDAT as executedAt,
+            mov.NOTE as note,
+            mov.updatedat as uptadedAt,
+            USERS.USERNAME AS username,
+            USERS.PASSWORD AS password,
+            USERS.EMAIL AS email,
+            USERS.FIRSTNAME AS firstname,
+            USERS.LASTNAME AS  lastname,
+            USERS.ALIAS AS alias,
+            USERS.SOCIALTYPE AS socialType,
+            USERS.GENDER as gender,
+            ACCOUNTS.id AS accountId ,
+            ACCOUNTS.name AS accountName,
+            ACCOUNTS.description AS accountDescription,
+            ACCOUNTS.DEFAULT_USER AS accountDefaultUsername,
+            ACCOUNTS.status AS accountStatus,
+            CATEGORIES.id AS categoryId,
+            CATEGORIES.user_value AS categoryValue,
+            CATEGORIES.type AS categoryType,
+            CATEGORIES.is_editable AS categoryIsEditable,
+            CATEGORIES.iconId as categoryIconId
+        FROM
+            (SELECT ID, TYPE, AMOUNT, EXECUTEDBY, EXECUTEDAT, NOTE, CATEGORYID, ACCOUNTID,updatedat
+                FROM MOVEMENTS
+            <include refid="movementsFilter" />
+             ) AS mov
+        Left JOIN USERS  ON (USERS.USERNAME = mov.EXECUTEDBY)
+        Left JOIN ACCOUNTS  ON (ACCOUNTS.ID = mov.ACCOUNTID)
+        LEFT JOIN CATEGORIES ON (CATEGORIES.ID = mov.CATEGORYID)
+        ORDER BY EXECUTEDAT DESC
+
+    </select>
+
+    <select id="findMovementsCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+          FROM
+            (SELECT ID, TYPE, AMOUNT, EXECUTEDBY, EXECUTEDAT, NOTE, CATEGORYID, ACCOUNTID,updatedat
+            FROM MOVEMENTS
+            <include refid="movementsFilter" />
+            ORDER BY EXECUTEDAT DESC
+            ) AS mov
+        Left JOIN USERS  ON (USERS.USERNAME = mov.EXECUTEDBY)
+        Left JOIN ACCOUNTS  ON (ACCOUNTS.ID = mov.ACCOUNTID)
+        LEFT JOIN CATEGORIES ON (CATEGORIES.ID = mov.CATEGORYID)
+    </select>
+
+    <select id="calculateSummaryMovements" resultMap="movementSummaryMap">
+        select
+          CATEGORYID as categoryId,
+          TYPE as type,
+          SUM(AMOUNT) as total
+        FROM MOVEMENTS
+        <where>
+            1 = 1
+            <if test="accountId != null">
+                AND ACCOUNTID= #{accountId}
+            </if>
+
+            <if test="day != null">
+                AND exec_day= #{day}
+            </if>
+            <if test="month != null">
+                AND exec_month= #{month}
+            </if>
+
+            <if test="year != null">
+                AND exec_year= #{year}
+            </if>
+
+        </where>
+        GROUP BY CATEGORYID, TYPE
+        ORDER BY TYPE
+    </select>
+
+    <insert id="insertMovement" >
+        INSERT INTO  PUBLIC.MOVEMENTS
+          (ID, TYPE, AMOUNT, EXECUTEDBY, EXECUTEDAT, NOTE, CATEGORYID, ACCOUNTID, is_auto)
+        VALUES
+          (#{id}, #{type},#{amount},#{username},#{executedAt},#{note},#{categoryId}, #{accountId} ,#{isAuto})
+    </insert>
+
+    <update id="updateMovement" >
+        UPDATE  PUBLIC.MOVEMENTS
+         SET TYPE = #{type},
+             AMOUNT = #{amount},
+             EXECUTEDBY = #{username},
+             EXECUTEDAT = #{executedAt},
+             NOTE = #{note},
+             CATEGORYID = #{categoryId} ,
+             ACCOUNTID = #{accountId}
+        WHERE
+             ID = #{id}
+    </update>
+
+    <delete id="deleteMovement" >
+        delete from  PUBLIC.MOVEMENTS
+        WHERE
+        ID = #{id}
+    </delete>
+
+
+
+    <select id="findAutoMovementToGenerate" resultMap="autoMovementMap">
+        SELECT
+            AUTO_MOVEMENT_SETTINGS.ID as id,
+            AUTO_MOVEMENT_SETTINGS.NAME as name,
+            AUTO_MOVEMENT_SETTINGS.DESCRIPTION as description,
+            AUTO_MOVEMENT_SETTINGS.FROM_DATE as fromDate,
+            AUTO_MOVEMENT_SETTINGS.END_DATE as toDate,
+            AUTO_MOVEMENT_SETTINGS.FREQUENCY as frequency ,
+            AUTO_MOVEMENT_SETTINGS.ACCOUNT as account,
+            AUTO_MOVEMENT_SETTINGS.AMOUNT as amount,
+            AUTO_MOVEMENT_SETTINGS.CATEGORYID as category,
+            AUTO_MOVEMENT_SETTINGS.TYPE as movementType,
+            unixTimePlusFrequency(AUTO_MOVEMENT_SETTINGS.FROM_DATE, AUTO_MOVEMENT_SETTINGS.FREQUENCY,AUTO_MOVEMENT_SETTINGS.multiplier) movementDate,
+            AUTO_MOVEMENT_SETTINGS.username  as username
+        FROM PUBLIC.AUTO_MOVEMENT_SETTINGS
+        INNER JOIN PUBLIC.ACCOUNTS ON (AUTO_MOVEMENT_SETTINGS.ACCOUNT = ACCOUNTS.ID)
+        <where>
+            --data fine infinito o maggior del movimento da generare
+            (END_DATE IS NULL OR END_DATE >= unixTimePlusFrequency(AUTO_MOVEMENT_SETTINGS.FROM_DATE, AUTO_MOVEMENT_SETTINGS.FREQUENCY,AUTO_MOVEMENT_SETTINGS.multiplier))
+            AND
+            --non ha ancora girato oggi per i riavvii
+            <![CDATA[
+                (last_exec is null OR last_exec < #{inDate})
+            ]]>
+            AND
+            --
+            <![CDATA[
+            unixTimePlusFrequency(AUTO_MOVEMENT_SETTINGS.FROM_DATE, AUTO_MOVEMENT_SETTINGS.FREQUENCY,AUTO_MOVEMENT_SETTINGS.multiplier) <= #{inDate}
+            ]]>
+        </where>
+
+    </select>
+
+
+    <update id="setExecutedMovementSettings" >
+        UPDATE  PUBLIC.AUTO_MOVEMENT_SETTINGS
+           SET  multiplier = multiplier+1,
+                last_exec = #{inDate}
+        WHERE   id=  #{id}
+    </update>
+
+    <insert id="insertMovementSettings" >
+        INSERT INTO  PUBLIC.AUTO_MOVEMENT_SETTINGS
+          (id,name,description,FROM_DATE,END_DATE,FREQUENCY, ACCOUNT, AMOUNT,CATEGORYID, TYPE,username, multiplier)
+        VALUES
+          (#{id}, #{name},#{description},#{fromDate},#{toDate},#{frequency}, #{account},  #{amount},  #{category}, #{movementType},  #{username},1 )
+    </insert>
+
+
+</mapper>

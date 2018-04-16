@@ -1,0 +1,168 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="it.italiancoders.mybudget.dao.User">
+
+    <resultMap id="userMap" type="it.italiancoders.mybudget.model.api.User">
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="email" column="email"/>
+        <result property="profileImageUrl" column="profileImageUrl"/>
+        <result property="firstname" column="firstname"/>
+        <result property="lastname" column="lastname"/>
+        <result property="alias" column="alias"/>
+        <result property="socialType" column="socialType" javaType="it.italiancoders.mybudget.model.api.SocialTypeEnum" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="gender" column="gender" javaType="it.italiancoders.mybudget.model.api.GenderEnum" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+
+    </resultMap>
+
+
+    <resultMap id="accountInviteMap" type="it.italiancoders.mybudget.model.api.UserAccountInvite">
+        <result property="id" column="id"/>
+        <result property="accountId" column="accountId"/>
+        <result property="user.username" column="userUsername"/>
+        <result property="user.alias" column="userAlias"/>
+        <result property="invitedBy.username" column="invitedByUsername"/>
+        <result property="invitedBy.profileImageUrl" column="invProfileImageUrl"/>
+        <result property="invitedBy.alias" column="invitedByAlias"/>
+        <result property="createdAt" column="createdAt"/>
+        <result property="updatedAt" column="updatedAt"/>
+    </resultMap>
+
+
+    <select id="findUsers" resultMap="userMap">
+        select USERNAME AS username,
+               PASSWORD AS password,
+               EMAIL AS email,
+               FIRSTNAME AS firstname,
+               LASTNAME AS  lastname,
+               ALIAS AS alias,
+               SOCIALTYPE AS socialType,
+               GENDER as gender,
+               PROFILE_IMG_URL as profileImageUrl
+          from PUBLIC.USERS
+        <where>
+            1 = 1
+            <if test="username != null">
+                AND LOWER (USERNAME)= LOWER(#{username})
+            </if>
+
+        </where>
+
+    </select>
+
+    <select id="isAdmin" resultType="java.lang.Integer">
+        select count(*)
+          from USER_ACCOUNT
+          where id_user = #{username} and id_account =  #{accountId} and is_admin = true
+    </select>
+
+    <select id="findAccountInvites" resultMap="accountInviteMap">
+        select
+            USER_ACCOUNT_INVITE.ID AS id,
+            USER_ACCOUNT_INVITE.CREATEDAT AS createdAt,
+            USER_ACCOUNT_INVITE.UPDATEDAT AS updatedAt,
+            USERS.USERNAME AS  userUsername,
+            USERS.ALIAS AS userAlias,
+            INVITED_BY.USERNAME AS invitedByUsername,
+            INVITED_BY.ALIAS as invitedByAlias,
+            INVITED_BY.PROFILE_IMG_URL as invProfileImageUrl,
+            USER_ACCOUNT_INVITE.ACCOUNT_ID as accountId
+        from USER_ACCOUNT_INVITE
+        Left JOIN USERS  ON (USERS.USERNAME = USER_ACCOUNT_INVITE.username)
+        Left JOIN USERS INVITED_BY ON (INVITED_BY.USERNAME = USER_ACCOUNT_INVITE.invitedBY)
+        <where>
+            1 = 1
+            <if test="username != null">
+                AND USERS.USERNAME= #{username}
+            </if>
+            <if test="id != null">
+                AND USER_ACCOUNT_INVITE.ID= #{id}
+            </if>
+            <if test="accountId != null">
+                AND ACCOUNT_ID= #{accountId}
+            </if>
+
+            <if test="invitedByUsername != null">
+                AND INVITED_BY.USERNAME= #{invitedByUsername}
+            </if>
+
+        </where>
+        ORDER BY USER_ACCOUNT_INVITE.CREATEDAT DESC
+
+    </select>
+
+    <delete id="deleteUserAccountInvite" >
+        DELETE FROM  USER_ACCOUNT_INVITE WHERE ID = #{id}
+    </delete>
+
+
+
+    <insert id="inviteUser" >
+        INSERT INTO  PUBLIC.USER_ACCOUNT_INVITE
+        (ID, USERNAME, INVITEDBY, ACCOUNT_ID)
+        VALUES
+        (#{id}, #{username},#{invitedBy},#{accountId})
+    </insert>
+
+    <select id="findInvitableUser" resultMap="userMap">
+        select USERNAME AS username,
+        ALIAS AS alias,
+        PROFILE_IMG_URL as profileImageUrl
+        from PUBLIC.USERS
+        <where>
+            username not in  (select id_user from USER_ACCOUNT where id_account = #{accountId} )
+            <if test="search != null">
+                AND(
+                (LOWER (email) LIKE '%' || LOWER(#{search})||'%') OR
+                (LOWER (alias) LIKE '%' || LOWER(#{search})||'%') OR
+                (LOWER (FIRSTNAME) LIKE '%' || LOWER(#{search})||'%') OR
+                (LOWER (LASTNAME) LIKE '%' || LOWER(#{search})||'%')
+
+                )
+            </if>
+            <if test="username != null">
+                AND USERNAME= #{username}
+            </if>
+
+        </where>
+        order by lower(alias)
+    </select>
+
+
+    <update id="updateUsers" >
+        UPDATE  PUBLIC.USERS
+           SET  EMAIL = LOWER(#{email}),
+                FIRSTNAME = #{firstname},
+                LASTNAME  = #{lastname},
+                ALIAS =  #{alias},
+                GENDER =  #{gender},
+                SOCIALTYPE =  #{socialType},
+                PROFILE_IMG_URL= #{profileImageUrl}
+        WHERE   LOWER (USERNAME)= LOWER(#{username})
+    </update>
+
+    <insert id="insertUser" >
+        INSERT INTO  PUBLIC.USERS
+          (USERNAME, PASSWORD, EMAIL, FIRSTNAME, LASTNAME, ALIAS, SOCIALTYPE, GENDER,PROFILE_IMG_URL)
+        VALUES
+          (#{username}, #{password},#{email},#{firstname},#{lastname},#{alias},#{socialType},#{gender}, #{profileImageUrl})
+    </insert>
+
+
+
+    <select id="checkIfExist" resultType="java.lang.Integer">
+        select count(*)
+        from PUBLIC.USERS
+        <where>
+            <if test="email != null">
+                AND LOWER (email)= LOWER(#{email})
+            </if>
+            <if test="username != null">
+                AND LOWER (username)= LOWER(#{username})
+            </if>
+
+        </where>
+
+    </select>
+</mapper>

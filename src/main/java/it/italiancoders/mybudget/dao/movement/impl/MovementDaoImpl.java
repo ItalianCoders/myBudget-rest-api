@@ -1,0 +1,165 @@
+package it.italiancoders.mybudget.dao.movement.impl;
+
+import it.italiancoders.mybudget.dao.account.AccountDao;
+import it.italiancoders.mybudget.dao.category.CategoryDao;
+import it.italiancoders.mybudget.dao.movement.MovementDao;
+import it.italiancoders.mybudget.model.api.Account;
+import it.italiancoders.mybudget.model.api.AutoMovementSettings;
+import it.italiancoders.mybudget.model.api.Movement;
+import it.italiancoders.mybudget.model.api.Page;
+import it.italiancoders.mybudget.model.api.mybatis.MovementSummaryResultType;
+import it.italiancoders.mybudget.utils.DateUtils;
+import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.support.SqlSessionDaoSupport;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Repository;
+
+import javax.validation.Valid;
+import java.util.*;
+
+@Repository
+public class MovementDaoImpl extends SqlSessionDaoSupport implements MovementDao {
+
+    @Autowired
+    CategoryDao categoryDao;
+
+    @Autowired
+    AccountDao accountDao;
+
+    @Value("${paginationSize}")
+    private Integer pageSize;
+
+    @Override
+    @Autowired
+    public void setSqlSessionFactory(SqlSessionFactory sqlSessionFactory) {
+        super.setSqlSessionFactory(sqlSessionFactory);
+    }
+
+
+    private Map<String, Object> toHashMap(Movement movement){
+        Map<String,Object> params = new HashMap<>();
+        params.put("id", movement.getId());
+        params.put("type", movement.getType().getValue());
+        params.put("amount", movement.getAmount());
+        params.put("username", movement.getExecutedBy().getUsername());
+        params.put("executedAt", movement.getExecutedAt());
+        params.put("note",  movement.getNote());
+        params.put("accountId", movement.getAccount().getId());
+        params.put("categoryId", movement.getCategory().getId());
+        params.put("isAuto", movement.isAuto());
+        return params;
+    }
+
+    @Override
+    public void inserMovement(Movement movement) {
+        Map<String,Object> params = toHashMap(movement);
+        getSqlSession().insert("it.italiancoders.mybudget.dao.Movement.insertMovement", params);
+
+    }
+
+    @Override
+    public Movement findMovement(String accountId, String id) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("accountId", accountId);
+        params.put("movementId", id);
+
+        return getSqlSession().selectOne("it.italiancoders.mybudget.dao.Movement.findMovements", params);
+
+    }
+
+    @Override
+    public List<Movement> findLastMovements(String accountId, Date date, RowBounds limit) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        int year = cal.get(Calendar.YEAR);
+        int month = cal.get(Calendar.MONTH);
+
+        Map<String,Object> params = new HashMap<>();
+        params.put("accountId", accountId);
+        params.put("month", month+1);
+        params.put("year", year);
+
+
+        List<Movement> retval =  getSqlSession().selectList("it.italiancoders.mybudget.dao.Movement.findMovements", params,limit);
+
+        retval.forEach(movement -> {
+            categoryDao.solveTitle(movement.getCategory());
+            accountDao.solveTitle(movement.getAccount());
+        });
+
+        return retval;
+    }
+
+    @Override
+    public List<MovementSummaryResultType> calculateSummaryMovements(String accountId, Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        int year = cal.get(Calendar.YEAR);
+        int month = cal.get(Calendar.MONTH);
+        Map<String,Object> params = new HashMap<>();
+        params.put("accountId", accountId);
+        params.put("month", month+1);
+        params.put("year", year);
+
+
+        List<MovementSummaryResultType> movementSummaryResultTypes = getSqlSession().selectList("it.italiancoders.mybudget.dao.Movement.calculateSummaryMovements", params);
+        return movementSummaryResultTypes;
+    }
+
+    @Override
+    public void updateMovement(Movement movement) {
+        Map<String,Object> params = toHashMap(movement);
+        getSqlSession().update("it.italiancoders.mybudget.dao.Movement.updateMovement", params);
+
+    }
+
+    @Override
+    public void deleteMovement(String movementId) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("id", movementId);
+        getSqlSession().delete("it.italiancoders.mybudget.dao.Movement.deleteMovement", params);
+
+    }
+
+    @Override
+    public Page<Movement> findMovements(String accountId, Integer year, Integer month, Integer day, String user,String categoryId, Integer page) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("accountId", accountId);
+        params.put("month", month);
+        params.put("year", year);
+        params.put("day", day);
+        params.put("user", user);
+        params.put("categoryId", categoryId);
+
+        List<Movement> result = new ArrayList<>();
+
+        Integer count = getSqlSession().selectOne("it.italiancoders.mybudget.dao.Movement.findMovementsCount", params);
+
+        if(count > 0){
+            RowBounds rowBounds =new RowBounds(page * pageSize, pageSize);
+            result = getSqlSession().selectList("it.italiancoders.mybudget.dao.Movement.findMovements", params, rowBounds);
+            result.forEach(movement -> {
+                categoryDao.solveTitle(movement.getCategory());
+                accountDao.solveTitle(movement.getAccount());
+            });
+        }
+        return new Page<Movement>(result, page, pageSize, count);
+    }
+
+    @Override
+    public List<AutoMovementSettings> findAutoMovementToGenerate(Date inDate) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("inDate", DateUtils.getUnixTime(inDate));
+        return getSqlSession().selectList("it.italiancoders.mybudget.dao.Movement.findAutoMovementToGenerate", params);
+    }
+
+    @Override
+    public void setExecutedMovementSettings(AutoMovementSettings autoMovementSettings, Date execDate) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("inDate", DateUtils.getUnixTime(execDate));
+        params.put("id", autoMovementSettings.getId());
+        getSqlSession().update("it.italiancoders.mybudget.dao.Movement.setExecutedMovementSettings", params);
+    }
+}
