@@ -6,7 +6,7 @@ import it.italiancoders.mybudget.model.api.User;
 
 public interface UserManager {
     User createUser(RegistrationUser registrationUser);
-    JwtAuthenticationResponse createSession (User user, String refreshToken);
+    JwtAuthenticationResponse createSession (User user, String accessToken, String refreshToken);
     void confirmUserInvite(String accountId, String Username, String inviteId);
 
 }

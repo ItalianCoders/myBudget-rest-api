@@ -13,6 +13,9 @@ public class JwtAuthenticationResponse {
     @JsonProperty("user")
     private User user;
 
+    @JsonProperty("accessToken")
+    private String accessToken;
+
     @JsonProperty("refreshToken")
     private String refreshToken;
 

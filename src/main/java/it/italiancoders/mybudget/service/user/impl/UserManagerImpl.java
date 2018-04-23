@@ -55,7 +55,7 @@ public class UserManagerImpl implements UserManager{
 
     @Override
     @Transactional
-    public JwtAuthenticationResponse createSession(User user, String refreshToken) {
+    public JwtAuthenticationResponse createSession(User user, String accessToken, String refreshToken) {
         List<Account> accounts = accountDao.findAccountsByUsername(user.getUsername());
         if(accounts == null || accounts.size() == 0){
             Account defaultAccount = buildUserDefaultAccount(user.getUsername());
@@ -68,6 +68,7 @@ public class UserManagerImpl implements UserManager{
 
         return JwtAuthenticationResponse.newBuilder()
                     .refreshToken(refreshToken)
+                    .accessToken(accessToken)
                     .user(user)
                     .accounts(accounts)
                     .build();

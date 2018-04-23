@@ -3,8 +3,7 @@ package it.italiancoders.mybudget.dao.movement.impl;
 import it.italiancoders.mybudget.dao.account.AccountDao;
 import it.italiancoders.mybudget.dao.category.CategoryDao;
 import it.italiancoders.mybudget.dao.movement.MovementDao;
-import it.italiancoders.mybudget.model.api.Account;
-import it.italiancoders.mybudget.model.api.AutoMovementSettings;
+import it.italiancoders.mybudget.model.api.ScheduledMovementSettings;
 import it.italiancoders.mybudget.model.api.Movement;
 import it.italiancoders.mybudget.model.api.Page;
 import it.italiancoders.mybudget.model.api.mybatis.MovementSummaryResultType;
@@ -16,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
-import javax.validation.Valid;
 import java.util.*;
 
 @Repository
@@ -149,17 +147,30 @@ public class MovementDaoImpl extends SqlSessionDaoSupport implements MovementDao
     }
 
     @Override
-    public List<AutoMovementSettings> findAutoMovementToGenerate(Date inDate) {
+    public List<ScheduledMovementSettings> findAutoMovementToGenerate(Date inDate) {
         Map<String,Object> params = new HashMap<>();
         params.put("inDate", DateUtils.getUnixTime(inDate));
         return getSqlSession().selectList("it.italiancoders.mybudget.dao.Movement.findAutoMovementToGenerate", params);
     }
 
     @Override
-    public void setExecutedMovementSettings(AutoMovementSettings autoMovementSettings, Date execDate) {
+    public void setExecutedMovementSettings(ScheduledMovementSettings scheduledMovementSettings, Date execDate) {
         Map<String,Object> params = new HashMap<>();
         params.put("inDate", DateUtils.getUnixTime(execDate));
-        params.put("id", autoMovementSettings.getId());
+        params.put("id", scheduledMovementSettings.getId());
         getSqlSession().update("it.italiancoders.mybudget.dao.Movement.setExecutedMovementSettings", params);
+    }
+
+    @Override
+    public List<ScheduledMovementSettings> getScheduledMovements(String accountId, Date date) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("inDate", DateUtils.getUnixTime(date));
+        params.put("accountId", accountId);
+        List<ScheduledMovementSettings> retval = getSqlSession().selectList("it.italiancoders.mybudget.dao.Movement.findScheduledMovements", params);
+        retval.forEach(movement -> {
+            categoryDao.solveTitle(movement.getCategory());
+        });
+
+        return retval;
     }
 }

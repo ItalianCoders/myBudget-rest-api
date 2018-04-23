@@ -115,43 +115,39 @@ public class AccountManagerImpl implements AccountManager {
     @Override
     public void deleteMovement(String movementId) {
         movementDao.deleteMovement(movementId);
-
     }
-
-
-
 
 
     @Override
     public void generateAutoMovement(Date inDate) {
-        List<AutoMovementSettings> autoMovementSettingsList = movementDao.findAutoMovementToGenerate(inDate);
+        List<ScheduledMovementSettings> scheduledMovementSettingsList = movementDao.findAutoMovementToGenerate(inDate);
 
-        if(autoMovementSettingsList == null || autoMovementSettingsList.size() == 0){
+        if(scheduledMovementSettingsList == null || scheduledMovementSettingsList.size() == 0){
             return;
         }
 
-        autoMovementSettingsList.forEach(autoMovementSettings -> {
+        scheduledMovementSettingsList.forEach(scheduledMovementSettings -> {
             Movement movement = Movement.newBuilder()
                                     .id(UUID.randomUUID().toString())
-                                    .type(autoMovementSettings.getType())
-                                    .amount(autoMovementSettings.getAmount())
-                                    .executedBy(autoMovementSettings.getUser())
-                                    .executedAt(autoMovementSettings.getMovementDate())
-                                    .account(autoMovementSettings.getAccount())
-                                    .category(autoMovementSettings.getCategory())
+                                    .type(scheduledMovementSettings.getType())
+                                    .amount(scheduledMovementSettings.getAmount())
+                                    .executedBy(scheduledMovementSettings.getUser())
+                                    .executedAt(scheduledMovementSettings.getNextMovementExecution())
+                                    .account(scheduledMovementSettings.getAccount())
+                                    .category(scheduledMovementSettings.getCategory())
                                     .isAuto(true)
                                     .build();
 
-            insertAutoMovement(movement, autoMovementSettings, inDate);
+            insertAutoMovement(movement, scheduledMovementSettings, inDate);
         });
     }
 
     @Override
     @Transactional
-    public void insertAutoMovement(Movement movement, AutoMovementSettings autoMovementSettings, Date execDate) {
+    public void insertAutoMovement(Movement movement, ScheduledMovementSettings scheduledMovementSettings, Date execDate) {
 
         movementDao.inserMovement(movement);
-        movementDao.setExecutedMovementSettings(autoMovementSettings, execDate);
+        movementDao.setExecutedMovementSettings(scheduledMovementSettings, execDate);
     }
 
     @Transactional

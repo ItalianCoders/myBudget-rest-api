@@ -36,9 +36,9 @@
 
     </resultMap>
 
-    <resultMap id="autoMovementMap" type="it.italiancoders.mybudget.model.api.AutoMovementSettings">
+    <resultMap id="autoMovementMap" type="it.italiancoders.mybudget.model.api.ScheduledMovementSettings">
         <result property="id" column="id"/>
-        <result property="movementDate" column="movementDate"/>
+        <result property="nextMovementExecution" column="nextMovementExecution"/>
         <result property="name" column="name"/>
         <result property="description" column="description"/>
         <result property="start" column="fromDate"/>
@@ -49,6 +49,16 @@
         <result property="category.id" column="category"/>
         <result property="type" column="movementType" javaType="it.italiancoders.mybudget.model.api.MovementType" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
         <result property="user.username" column="username"/>
+        <result property="category.value" column="categoryValue"/>
+        <result property="category.type" column="categoryType" javaType="it.italiancoders.mybudget.model.api.MovementType" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="category.isEditable" column="categoryIsEditable"/>
+        <result property="category.iconId" column="categoryIconId"/>
+        <result property="user.username" column="username"/>
+        <result property="user.email" column="email"/>
+        <result property="user.firstname" column="firstname"/>
+        <result property="user.lastname" column="lastname"/>
+        <result property="user.alias" column="alias"/>
+        <result property="user.socialType" column="socialType" javaType="it.italiancoders.mybudget.model.api.SocialTypeEnum" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
 
     </resultMap>
 
@@ -204,7 +214,7 @@
             AUTO_MOVEMENT_SETTINGS.AMOUNT as amount,
             AUTO_MOVEMENT_SETTINGS.CATEGORYID as category,
             AUTO_MOVEMENT_SETTINGS.TYPE as movementType,
-            unixTimePlusFrequency(AUTO_MOVEMENT_SETTINGS.FROM_DATE, AUTO_MOVEMENT_SETTINGS.FREQUENCY,AUTO_MOVEMENT_SETTINGS.multiplier) movementDate,
+            unixTimePlusFrequency(AUTO_MOVEMENT_SETTINGS.FROM_DATE, AUTO_MOVEMENT_SETTINGS.FREQUENCY,AUTO_MOVEMENT_SETTINGS.multiplier) nextMovementExecution,
             AUTO_MOVEMENT_SETTINGS.username  as username
         FROM PUBLIC.AUTO_MOVEMENT_SETTINGS
         INNER JOIN PUBLIC.ACCOUNTS ON (AUTO_MOVEMENT_SETTINGS.ACCOUNT = ACCOUNTS.ID)
@@ -223,6 +233,47 @@
             ]]>
         </where>
 
+    </select>
+
+    <select id="findScheduledMovements" resultMap="autoMovementMap">
+        SELECT
+            AUTO_MOVEMENT_SETTINGS.ID as id,
+            AUTO_MOVEMENT_SETTINGS.NAME as name,
+            AUTO_MOVEMENT_SETTINGS.DESCRIPTION as description,
+            AUTO_MOVEMENT_SETTINGS.FROM_DATE as fromDate,
+            AUTO_MOVEMENT_SETTINGS.END_DATE as toDate,
+            AUTO_MOVEMENT_SETTINGS.FREQUENCY as frequency ,
+            AUTO_MOVEMENT_SETTINGS.ACCOUNT as account,
+            AUTO_MOVEMENT_SETTINGS.AMOUNT as amount,
+            AUTO_MOVEMENT_SETTINGS.CATEGORYID as category,
+            AUTO_MOVEMENT_SETTINGS.TYPE as movementType,
+            unixTimePlusFrequency(AUTO_MOVEMENT_SETTINGS.FROM_DATE, AUTO_MOVEMENT_SETTINGS.FREQUENCY,AUTO_MOVEMENT_SETTINGS.multiplier) nextMovementExecution,
+            AUTO_MOVEMENT_SETTINGS.username  as username,
+            USERS.USERNAME AS username,
+            USERS.PASSWORD AS password,
+            USERS.EMAIL AS email,
+            USERS.FIRSTNAME AS firstname,
+            USERS.LASTNAME AS  lastname,
+            USERS.ALIAS AS alias,
+            USERS.SOCIALTYPE AS socialType,
+            USERS.GENDER as gender,
+            CATEGORIES.id AS categoryId,
+            CATEGORIES.user_value AS categoryValue,
+            CATEGORIES.type AS categoryType,
+            CATEGORIES.is_editable AS categoryIsEditable,
+            CATEGORIES.iconId as categoryIconId
+        FROM PUBLIC.AUTO_MOVEMENT_SETTINGS
+        INNER JOIN PUBLIC.ACCOUNTS ON (AUTO_MOVEMENT_SETTINGS.ACCOUNT = ACCOUNTS.ID)
+        Left JOIN USERS  ON (USERS.USERNAME = AUTO_MOVEMENT_SETTINGS.username)
+        LEFT JOIN CATEGORIES ON (CATEGORIES.ID = AUTO_MOVEMENT_SETTINGS.CATEGORYID)
+        <where>
+            --data fine infinito o maggior del movimento da generare
+            (END_DATE IS NULL OR END_DATE >= unixTimePlusFrequency(AUTO_MOVEMENT_SETTINGS.FROM_DATE, AUTO_MOVEMENT_SETTINGS.FREQUENCY,AUTO_MOVEMENT_SETTINGS.multiplier))
+            <if test="accountId != null">
+                AND AUTO_MOVEMENT_SETTINGS.account= #{accountId}
+            </if>
+        </where>
+        ORDER BY upper(AUTO_MOVEMENT_SETTINGS.NAME) ASC
     </select>
 
 

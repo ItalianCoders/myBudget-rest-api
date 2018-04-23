@@ -14,11 +14,11 @@ import java.util.Map;
 public class AccountDetails  extends Account{
 
 
-    @JsonProperty("incomingCategoriesAvalaible")
-    private List<Category> incomingCategoriesAvalaible;
+    @JsonProperty("incomingCategoriesAvailable")
+    private List<Category> incomingCategoriesAvailable ;
 
-    @JsonProperty("expenseCategoriesAvalaible")
-    private List<Category> expenseCategoriesAvalaible;
+    @JsonProperty("expenseCategoriesAvailable")
+    private List<Category> expenseCategoriesAvailable;
 
     @JsonProperty("totalMonthlyIncoming")
     private Double totalMonthlyIncoming;
@@ -59,8 +59,8 @@ public class AccountDetails  extends Account{
     @Builder(builderMethodName = "newBuilderExt")
     public AccountDetails(String id, @NotNull String name, String description, AccountStatusEnum status, Integer numberOfUsers, String defaultUsername, List<Category> incomingCategoriesAvalaible, List<Category> expenseCategoriesAvalaible, Double totalMonthlyIncoming, Double totalMonthlyExpense, Map<String, Double> incomingOverviewMovement, Map<String, Double> expenseOverviewMovement, List<Movement> lastMovements, List<User> members, List<String> administrators, Integer numberOfPendingAccountInvites) {
         super(id, name, description, status, numberOfUsers, defaultUsername);
-        this.incomingCategoriesAvalaible = incomingCategoriesAvalaible;
-        this.expenseCategoriesAvalaible = expenseCategoriesAvalaible;
+        this.incomingCategoriesAvailable = incomingCategoriesAvalaible;
+        this.expenseCategoriesAvailable = expenseCategoriesAvalaible;
         this.totalMonthlyIncoming = totalMonthlyIncoming;
         this.totalMonthlyExpense = totalMonthlyExpense;
         this.incomingOverviewMovement = incomingOverviewMovement;

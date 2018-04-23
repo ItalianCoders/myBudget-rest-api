@@ -69,9 +69,8 @@ public class AuthenticationController {
         final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         final String accessToken = jwtTokenUtil.generateToken(userDetails, JwtTokenType.AccessToken);
         final String refreshToken = jwtTokenUtil.generateToken(userDetails, JwtTokenType.RefreshToken);
-        response.setHeader(tokenHeader,accessToken);
         // Ritorno il token
-        return ResponseEntity.ok(userManager.createSession((User) userDetails,refreshToken));
+        return ResponseEntity.ok(userManager.createSession((User) userDetails,accessToken, refreshToken));
     }
 
     @RequestMapping(value = "protected/refresh-token", method = RequestMethod.GET)

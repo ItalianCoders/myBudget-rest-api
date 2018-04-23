@@ -3,8 +3,6 @@ package it.italiancoders.mybudget.service.account;
 import it.italiancoders.mybudget.model.api.*;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.util.Date;
 
 public interface AccountManager {
@@ -19,7 +17,7 @@ public interface AccountManager {
 
     void generateAutoMovement(Date inDate);
 
-    void insertAutoMovement(Movement movement, AutoMovementSettings autoMovementSettings, Date execDate);
+    void insertAutoMovement(Movement movement, ScheduledMovementSettings scheduledMovementSettings, Date execDate);
 
     void leftAccount(Account myAccount,  String username);
 }

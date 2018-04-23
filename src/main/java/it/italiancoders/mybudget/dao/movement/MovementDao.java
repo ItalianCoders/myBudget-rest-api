@@ -1,12 +1,11 @@
 package it.italiancoders.mybudget.dao.movement;
 
-import it.italiancoders.mybudget.model.api.AutoMovementSettings;
+import it.italiancoders.mybudget.model.api.ScheduledMovementSettings;
 import it.italiancoders.mybudget.model.api.Movement;
 import it.italiancoders.mybudget.model.api.Page;
 import it.italiancoders.mybudget.model.api.mybatis.MovementSummaryResultType;
 import org.apache.ibatis.session.RowBounds;
 
-import javax.validation.Valid;
 import java.util.Date;
 import java.util.List;
 
@@ -25,7 +24,9 @@ public interface MovementDao {
 
     Page<Movement> findMovements(String accountId, Integer year, Integer month, Integer day, String user, String categoryId, Integer page);
 
-    List<AutoMovementSettings> findAutoMovementToGenerate(Date inDate);
+    List<ScheduledMovementSettings> findAutoMovementToGenerate(Date inDate);
 
-    void setExecutedMovementSettings(AutoMovementSettings autoMovementSettings, Date execDate);
+    void setExecutedMovementSettings(ScheduledMovementSettings scheduledMovementSettings, Date execDate);
+
+    List<ScheduledMovementSettings> getScheduledMovements(String accountId, Date date);
 }
