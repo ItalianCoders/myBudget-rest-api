@@ -47,7 +47,8 @@ public class MovementController {
         update
     }
 
-    @RequestMapping(value = "protected/v1/accounts/{accountId}/movements", method = RequestMethod.POST, produces = {MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "protected/v1/accounts/{accountId}/movements",
+            method = RequestMethod.POST, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<?> postMovement(@PathVariable String accountId, @RequestBody @Valid Movement movement) throws Exception {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -87,7 +88,9 @@ public class MovementController {
         return ResponseEntity.noContent().build();
     }
 
-    @RequestMapping(value = "protected/v1/accounts/{accountId}/movements/{movementId}", method = RequestMethod.PUT, produces = {MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "protected/v1/accounts/{accountId}/movements/{movementId}",
+            method = RequestMethod.PUT,
+            produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<?> updateMovement(@PathVariable String accountId,
                                             @PathVariable String movementId,
                                             @RequestBody @Valid Movement movement) throws Exception {
@@ -191,7 +194,8 @@ public class MovementController {
 
     }
 
-    @RequestMapping(value = "protected/v1/accounts/{accountId}/scheduled-movements", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "protected/v1/accounts/{accountId}/scheduled-movements",
+            method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<?> getScheduledMovements(@PathVariable String accountId) throws Exception {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -245,8 +249,10 @@ public class MovementController {
                 if (movementDao.existScheduleMovement(accountId, null, scheduledMovementSettings.getName())) {
                     throw new RestException(HttpStatus.BAD_REQUEST,
                             errorMessageHeader,
-                            messageSource.getMessage("AccountController.userNotEnabled",
-                                    new Object[]{accountId, scheduledMovementSettings.getUser().getUsername()}, locale),
+                            messageSource.getMessage(
+                                    "AccountController.scheduledMovements.nameAlreadyUsed",
+                                    new Object[]{scheduledMovementSettings.getName()},
+                                    locale),
                             0);
                 }
             }
@@ -291,14 +297,15 @@ public class MovementController {
         }
 
     }
-    @RequestMapping(value = "protected/v1/accounts/{accountId}/scheduled-movements", method = RequestMethod.POST, produces = {MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "protected/v1/accounts/{accountId}/scheduled-movements",
+            method = RequestMethod.POST, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<?> postScheduledMovements(@PathVariable String accountId,
                                                     @RequestBody @Valid ScheduledMovementSettings scheduledMovementSettings) throws Exception {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) auth.getPrincipal();
-
         Locale locale = LocaleContextHolder.getLocale();
+
         Account myAccount = accountDao.findById(accountId, currentUser.getUsername());
 
         if (myAccount == null) {
