@@ -57,23 +57,23 @@ public class InviteAccountController {
     UserManager userManager;
 
 
-    @RequestMapping(value = "protected/v1/accounts/{accountId}/invite/users", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<?> findInvitableUsers(@PathVariable String accountId,
-                                                @RequestParam(name = "search",required = false) String  search) throws Exception {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) auth.getPrincipal();
+    @RequestMapping(value = "protected/v1/accounts/{accountId}/invite/users",
+            method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<?> findInvitableUsers(
+            @PathVariable String accountId,
+            @RequestParam(name = "search", required = false) String search) {
         return ResponseEntity.ok(userDao.findInvitableUsers(accountId, search, null));
     }
 
-    @RequestMapping(value = "protected/v1/pending-invites", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<?> getPendingUserInvites() throws Exception {
+    @RequestMapping(value = "protected/v1/pending-invites",
+            method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<?> getPendingUserInvites() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) auth.getPrincipal();
-        Locale locale = LocaleContextHolder.getLocale();
 
         List<UserAccountInvite> pendingInvite = userDao.findAccountInvites(null, currentUser.getUsername());
 
-        if(pendingInvite == null){
+        if (pendingInvite == null) {
             pendingInvite = new ArrayList<>();
         }
 
@@ -81,10 +81,11 @@ public class InviteAccountController {
 
     }
 
-    @RequestMapping(value = "protected/v1/pending-invites/{id}/reply", method = RequestMethod.POST, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<?> replyInvite(@PathVariable  String id,
-                                         @RequestParam(name = "action",required = true) Integer action
-                                         ) throws Exception {
+    @RequestMapping(value = "protected/v1/pending-invites/{id}/reply",
+            method = RequestMethod.POST)
+    public ResponseEntity<?> replyInvite(@PathVariable String id,
+                                         @RequestParam(name = "action") Integer action
+    ) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) auth.getPrincipal();
         InviteStatus status = InviteStatus.values()[action];
@@ -92,51 +93,52 @@ public class InviteAccountController {
 
         UserAccountInvite pendingInvite = userDao.findAccountInvite(id);
 
-        if(pendingInvite == null || !pendingInvite.getUser().getUsername().equals(currentUser.getUsername())){
+        if (pendingInvite == null || !pendingInvite.getUser().getUsername().equals(currentUser.getUsername())) {
             throw new NoSuchEntityException();
         }
 
         Account account = accountDao.findById(pendingInvite.getAccountId(), null);
 
-        if(account == null){
+        if (account == null) {
             throw new NoSuchEntityException();
         }
 
-        if(status == InviteStatus.Confirmed){
+        if (status == InviteStatus.Confirmed) {
             userManager.confirmUserInvite(account.getId(), currentUser.getUsername(), id);
-        }else {
+        } else {
             userDao.deleteInvite(id);
         }
         return ResponseEntity.noContent().build();
 
     }
 
-    @RequestMapping(value = "protected/v1/accounts/{accountId}/invite/users/{username}", method = RequestMethod.POST, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<?> inviteUser(@PathVariable  String accountId,
-                                        @PathVariable  String username) throws Exception {
-        Authentication auth =SecurityContextHolder.getContext().getAuthentication();
+    @RequestMapping(value = "protected/v1/accounts/{accountId}/invite/users/{username}",
+            method = RequestMethod.POST, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<?> inviteUser(@PathVariable String accountId,
+                                        @PathVariable String username) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) auth.getPrincipal();
         Locale locale = LocaleContextHolder.getLocale();
 
         List<UserAccountInvite> pendingInvite = userDao.findAccountInvites(accountId, username);
 
-        if(pendingInvite != null && pendingInvite.size() > 0){
+        if (pendingInvite != null && pendingInvite.size() > 0) {
             throw new RestException(HttpStatus.BAD_REQUEST,
-                    messageSource.getMessage("AccountController.inviteUserFailed",null, locale),
-                    messageSource.getMessage("AccountController.pendingInvite",null, locale),
+                    messageSource.getMessage("AccountController.inviteUserFailed", null, locale),
+                    messageSource.getMessage("AccountController.pendingInvite", null, locale),
                     0);
         }
 
-        List<User> invitableUsers =userDao.findInvitableUsers(accountId, null, username);
+        List<User> invitableUsers = userDao.findInvitableUsers(accountId, null, username);
 
-        if(invitableUsers == null && invitableUsers.size() ==0){
+        if (invitableUsers == null && invitableUsers.size() == 0) {
             throw new RestException(HttpStatus.BAD_REQUEST,
-                    messageSource.getMessage("AccountController.inviteUserFailed",null, locale),
-                    messageSource.getMessage("AccountController.userNotAllowedForInvite",null, locale),
+                    messageSource.getMessage("AccountController.inviteUserFailed", null, locale),
+                    messageSource.getMessage("AccountController.userNotAllowedForInvite", null, locale),
                     0);
         }
 
-        userDao.inviteUser(username,accountId,currentUser);
+        userDao.inviteUser(username, accountId, currentUser);
 
         return ResponseEntity.noContent().build();
     }

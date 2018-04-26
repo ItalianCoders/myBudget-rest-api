@@ -50,6 +50,23 @@ public class MovementDaoImpl extends SqlSessionDaoSupport implements MovementDao
         return params;
     }
 
+    private Map<String, Object> toHashMap(ScheduledMovementSettings movement){
+        Map<String,Object> params = new HashMap<>();
+        params.put("id", movement.getId());
+        params.put("account", movement.getAccount().getId());
+        params.put("name", movement.getName());
+        params.put("description", movement.getDescription());
+        params.put("from_date", movement.getStart());
+        params.put("end_date", movement.getEnd());
+        params.put("frequency", movement.getFrequency().getValue());
+        params.put("type", movement.getType().getValue());
+        params.put("username", movement.getUser().getUsername());
+        params.put("categoryId", movement.getCategory().getId());
+        params.put("amount", movement.getAmount());
+        return params;
+    }
+
+
     @Override
     public void inserMovement(Movement movement) {
         Map<String,Object> params = toHashMap(movement);
@@ -172,5 +189,57 @@ public class MovementDaoImpl extends SqlSessionDaoSupport implements MovementDao
         });
 
         return retval;
+    }
+
+    @Override
+    public boolean existScheduleMovement(String accountId, String id, String name) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("accountId", accountId);
+        params.put("name", name);
+        params.put("id", id);
+
+        List<ScheduledMovementSettings> retval =
+                getSqlSession().selectList("it.italiancoders.mybudget.dao.Movement.findScheduledMovements", params);
+
+
+        return retval != null && retval.size() > 0 ? true : false;
+    }
+
+
+    @Override
+    public boolean isValidScheduledMovementUpdate(String accountId, String id, ScheduledMovementSettings newValue) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("accountId", accountId);
+        params.put("name", newValue.getName());
+        params.put("currentId", id);
+
+        List<ScheduledMovementSettings> retval =
+                getSqlSession().selectList("it.italiancoders.mybudget.dao.Movement.findScheduledMovements", params);
+
+
+        return retval != null && retval.size() > 0 ? false : true;
+    }
+
+    @Override
+    public void insertScheduledMovements(ScheduledMovementSettings scheduledMovementSettings) {
+        scheduledMovementSettings.setId(UUID.randomUUID().toString());
+        Map<String,Object> params = toHashMap(scheduledMovementSettings);
+        getSqlSession().insert("it.italiancoders.mybudget.dao.Movement.insertScheduledMovements", params);
+
+    }
+
+    @Override
+    public void deleteScheduledMovements(String id) {
+        Map<String,Object> params = new HashMap<>();
+        params.put("id", id);
+        getSqlSession().delete("it.italiancoders.mybudget.dao.Movement.deleteScheduledMovements", params);
+
+    }
+
+    @Override
+    public void updateScheduledMovement(ScheduledMovementSettings scheduledMovementSettings) {
+        Map<String,Object> params = toHashMap(scheduledMovementSettings);
+        getSqlSession().update("it.italiancoders.mybudget.dao.Movement.updateScheduledMovement", params);
+
     }
 }

@@ -36,29 +36,27 @@ import java.util.concurrent.Executor;
 @EnableScheduling
 public class MyBudgetApplication {
 
-	private final static String FIREBASE_CONF_PATH = "/firebase/mybudget-5c4c1-firebase-adminsdk-yju1l-fd0b5ea35f.json";
-    private final static Logger logger = LoggerFactory.getLogger(MyBudgetApplication.class);
+    private static final  String FIREBASE_CONF_PATH = "/firebase/mybudget-5c4c1-firebase-adminsdk-yju1l-fd0b5ea35f.json";
+    private static final  Logger logger = LoggerFactory.getLogger(MyBudgetApplication.class);
 
-    //dd
+    @Autowired
+    AccountManager accountManager;
 
-	@Autowired
-	AccountManager accountManager;
-
-	@PostConstruct
-	void started() {
-		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    @PostConstruct
+    void started() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         initFirebase();
 
 
-	}
+    }
 
 
-	private void initFirebase(){
+    private void initFirebase() {
 
-	    try {
-			String path=this.getClass().getResource("/static").getFile();
+        try {
+            String path = this.getClass().getResource("/static").getFile();
             FileInputStream serviceAccount =
-                    new FileInputStream(path+FIREBASE_CONF_PATH);
+                    new FileInputStream(path + FIREBASE_CONF_PATH);
 
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
@@ -66,46 +64,45 @@ public class MyBudgetApplication {
                     .build();
 
             FirebaseApp.initializeApp(options);
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(" unable to initialize firebase", e);
         }
-	}
+    }
 
-	@Bean
-	public TaskScheduler taskScheduler() {
-		return new ConcurrentTaskScheduler();
-	}
+    @Bean
+    public TaskScheduler taskScheduler() {
+        return new ConcurrentTaskScheduler();
+    }
 
-	@Bean
-	public Executor taskExecutor() {
-		return new SimpleAsyncTaskExecutor();
-	}
+    @Bean
+    public Executor taskExecutor() {
+        return new SimpleAsyncTaskExecutor();
+    }
 
-	public static void main(String[] args) {
-		SpringApplication.run(MyBudgetApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MyBudgetApplication.class, args);
+    }
 
-	@Bean
-	public CommandLineRunner loadData(UserDao testDao, AccountManager accountManager) {
-		return (args) -> {
-			User ret = testDao.findByUsernameCaseInsensitive("admin");
-			accountManager.generateAutoMovement(new Date());
-		};
-	}
+    @Bean
+    public CommandLineRunner loadData(AccountManager accountManager) {
+        return (args) ->
+            accountManager.generateAutoMovement(new Date());
 
-	@Scheduled(cron = "0 0 0 * * *",zone = "GMT")
-	public void scheduleAutoMovementGen(){
-		Date date = new Date();
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(date);
-		cal.set(Calendar.HOUR_OF_DAY, 0);
-		cal.set(Calendar.MINUTE, 0);
-		cal.set(Calendar.SECOND, 0);
-		cal.set(Calendar.MILLISECOND, 0);
-		date = cal.getTime();
+    }
 
-		accountManager.generateAutoMovement(date);
+    @Scheduled(cron = "0 0 0 * * *", zone = "GMT")
+    public void scheduleAutoMovementGen() {
+        Date date = new Date();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        date = cal.getTime();
 
-	}
+        accountManager.generateAutoMovement(date);
+
+    }
 
 }

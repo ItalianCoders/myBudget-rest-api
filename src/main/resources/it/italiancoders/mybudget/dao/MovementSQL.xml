@@ -272,6 +272,16 @@
             <if test="accountId != null">
                 AND AUTO_MOVEMENT_SETTINGS.account= #{accountId}
             </if>
+            <if test="name != null">
+                AND upper (AUTO_MOVEMENT_SETTINGS.NAME) = upper(#{name})
+            </if>
+            <if test="id != null">
+                AND AUTO_MOVEMENT_SETTINGS.ID = #{id}
+            </if>
+            <if test="currentId != null">
+                AND AUTO_MOVEMENT_SETTINGS.ID != #{currentId}
+            </if>
+
         </where>
         ORDER BY upper(AUTO_MOVEMENT_SETTINGS.NAME) ASC
     </select>
@@ -284,12 +294,32 @@
         WHERE   id=  #{id}
     </update>
 
-    <insert id="insertMovementSettings" >
+    <insert id="insertScheduledMovements" >
         INSERT INTO  PUBLIC.AUTO_MOVEMENT_SETTINGS
           (id,name,description,FROM_DATE,END_DATE,FREQUENCY, ACCOUNT, AMOUNT,CATEGORYID, TYPE,username, multiplier)
         VALUES
-          (#{id}, #{name},#{description},#{fromDate},#{toDate},#{frequency}, #{account},  #{amount},  #{category}, #{movementType},  #{username},1 )
+          (#{id}, #{name},#{description},#{from_date},#{end_date},#{frequency}, #{account}, #{amount},  #{categoryId}, #{type},  #{username},1 )
     </insert>
 
+    <update id="updateScheduledMovement" >
+        UPDATE  PUBLIC.AUTO_MOVEMENT_SETTINGS
+           SET  multiplier = 1,
+                last_exec = #{inDate},
+                name =  #{name},
+                description = #{description},
+                FROM_DATE = #{from_date},
+                END_DATE = #{end_date},
+                FREQUENCY = #{frequency},
+                AMOUNT = #{amount},
+                CATEGORYID = #{categoryId},
+                TYPE = #{type},
+                username = #{username}
+        WHERE   id=  #{id}
+    </update>
 
+    <delete id="deleteScheduledMovements" >
+        delete from  PUBLIC.AUTO_MOVEMENT_SETTINGS
+        WHERE
+        ID = #{id}
+    </delete>
 </mapper>

@@ -16,7 +16,6 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 public class ScheduledMovementSettings {
 
-    @NotNull
     @JsonProperty("id")
     private String id;
 
@@ -37,12 +36,14 @@ public class ScheduledMovementSettings {
     private Long nextMovementExecution;
 
     @JsonProperty("frequency")
+    @NotNull
     private ScheduledFrequencyEnum frequency;
 
     @JsonProperty(value ="account" ,access = JsonProperty.Access.WRITE_ONLY)
     private Account account;
 
     @JsonProperty("amount")
+    @NotNull
     private Double amount;
 
     @JsonProperty("category")
@@ -52,6 +53,7 @@ public class ScheduledMovementSettings {
     private User user;
 
     @JsonProperty("movementType")
+    @NotNull
     private MovementType type;
 
     public ScheduledMovementSettings(){}

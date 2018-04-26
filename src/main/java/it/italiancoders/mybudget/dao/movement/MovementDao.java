@@ -29,4 +29,14 @@ public interface MovementDao {
     void setExecutedMovementSettings(ScheduledMovementSettings scheduledMovementSettings, Date execDate);
 
     List<ScheduledMovementSettings> getScheduledMovements(String accountId, Date date);
+
+    boolean existScheduleMovement(String accountId, String id, String name);
+
+    void insertScheduledMovements(ScheduledMovementSettings scheduledMovementSettings);
+
+    void deleteScheduledMovements(String id);
+
+    void updateScheduledMovement(ScheduledMovementSettings scheduledMovementSettings);
+
+    boolean isValidScheduledMovementUpdate(String accountId, String id, ScheduledMovementSettings newValue);
 }
